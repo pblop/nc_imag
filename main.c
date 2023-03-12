@@ -2,6 +2,7 @@
 #include "termio.h"
 #include "util.h"
 #include <stdio.h>
+#include <signal.h>
 
 void sigint_handler(int signum);
 void setup_sigint_handler(void);
