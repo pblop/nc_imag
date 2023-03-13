@@ -1,3 +1,5 @@
 *.o
 ncimag
 *.dSYM
+test
+*.png
