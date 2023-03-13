@@ -237,6 +237,9 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
   fprintf(stderr, "[%s:%d] Printing image of %dx%d.\n", client_addr_str, ntohs(client_addr->sin6_port), img.width, img.height);
   print_image(connfd, &img);
 
+  // Free the actual image array
+  free(img.pixels);
+
   close(connfd);
   return 0;
 }/*}}}*/
