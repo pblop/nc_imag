@@ -14,14 +14,14 @@ typedef struct {
 } pixel_t;
 
 typedef struct {
-  unsigned int x, y;
+  unsigned int height, width;
   pixel_t *pixels;
 } image_t;
 
 img_type_t guess_image_type(unsigned char *raw_img, unsigned long length);
-image_t* decode_image(unsigned char *raw_img, unsigned long length, img_type_t image_type);
-image_t* decode_jpeg(unsigned char *raw_img, unsigned long length);
-image_t* decode_png(unsigned char *raw_img, unsigned long length);
+int decode_image(image_t* out, unsigned char *raw_img, unsigned long length, img_type_t image_type);
+int decode_jpeg(image_t* out, unsigned char *raw_img, unsigned long length);
+int decode_png(image_t* out, unsigned char *raw_img, unsigned long length);
 
 int swrite(int fildes, const char* msg);
 

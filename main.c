@@ -114,7 +114,7 @@ int connection_logic(int connfd)/*{{{*/
   unsigned char buf[INPUT_BUFSIZE+1];
   int bytes_read;
   img_type_t img_type;
-  image_t* image = NULL;
+  image_t image;
   globals.connfd = connfd; // Save the connection file descriptor for the signal handler.
   
   // We must ignore sigints because they will be sent to us whenever our parent
@@ -149,8 +149,7 @@ int connection_logic(int connfd)/*{{{*/
     return 0;
   }
 
-  image = decode_image(buf, bytes_read, img_type);
-  if (image == NULL)
+  if (decode_image(&image, buf, bytes_read, img_type) != 0)
   {
     swrite(connfd, "Sorry, we had an error while decoding that image\n");
     close(connfd);

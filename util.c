@@ -1,5 +1,7 @@
 #include "util.h"
 
+#include "lodepng/lodepng.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -21,27 +23,33 @@ img_type_t guess_image_type(unsigned char *raw_img, unsigned long length)/*{{{*/
   return IMGT_UNKNOWN;
 }/*}}}*/
 
-image_t* decode_image(unsigned char *raw_img, unsigned long length, img_type_t image_type)/*{{{*/
+int decode_image(image_t* out, unsigned char *raw_img, unsigned long length, img_type_t image_type)/*{{{*/
 {
   switch (image_type)
   {
     case IMGT_JPEG:
-      return decode_jpeg(raw_img, length);
+      return decode_jpeg(out, raw_img, length);
     case IMGT_PNG:
-      return decode_png(raw_img, length);
+      return decode_png(out, raw_img, length);
 
     default:
-      return NULL;
+      return -1;
   }
 }/*}}}*/
 
-image_t* decode_jpeg(unsigned char *raw_img, unsigned long length)/*{{{*/
+int decode_jpeg(image_t* out, unsigned char *raw_img, unsigned long length)/*{{{*/
 {
-  return NULL;
+  UNUSED(out);
+  UNUSED(raw_img);
+  UNUSED(length);
+  return -1;
 }/*}}}*/
 
-image_t* decode_png(unsigned char *raw_img, unsigned long length)/*{{{*/
+int decode_png(image_t* out, unsigned char *raw_img, unsigned long length)/*{{{*/
 {
-  return NULL;
+  unsigned int error;
+
+  error = lodepng_decode32((unsigned char**) out->pixels, &out->width, &out->height, raw_img, length);
+  return error;
 }/*}}}*/
 
