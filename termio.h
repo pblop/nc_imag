@@ -27,6 +27,11 @@ typedef struct {
   unsigned char r, g, b;
 } colour_t;
 
+typedef enum {
+  POSITION_FOREGROUND,
+  POSITION_BACKGROUND
+} colour_position_t;
+
 // KB HANDLING /*{{{*/
 typedef enum
 {
@@ -75,5 +80,6 @@ void unsetup_screen(void);
 int get_window_size(int *width, int *height);
 
 int msleep(long msec);
+void dprint_colour(int fildes, colour_t *colour, int x, int y, colour_position_t position);
 
 #endif

@@ -162,3 +162,22 @@ int msleep(long msec)/*{{{*/
   return res;
 }/*}}}*/
 
+void dprint_colour(int fildes, colour_t *colour, int x, int y, colour_position_t pos)/*{{{*/
+{
+  x+=1; y+=1; // because terminal indexes at 1
+  if (colour == NULL)
+  {
+    if (pos == POSITION_BACKGROUND)
+      dprintf(fildes, GOTO REMOVE_COLOUR, y, x);
+    else
+      dprintf(fildes, GOTO REMOVE_BACKGROUND, y, x);
+  }
+  else
+  {
+    if (pos == POSITION_BACKGROUND)
+      dprintf(fildes, GOTO RGB_COLOUR, y, x, colour->r, colour->g, colour->b);
+    else
+      dprintf(fildes, GOTO RGB_BACKGROUND, y, x, colour->r, colour->g, colour->b);
+  }
+}/*}}}*/
+

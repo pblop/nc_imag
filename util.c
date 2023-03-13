@@ -1,5 +1,6 @@
 #include "util.h"
 
+#include "termio.h"
 #include "lodepng/lodepng.h"
 
 #include <stdio.h>
@@ -52,4 +53,28 @@ int decode_png(image_t* out, unsigned char *raw_img, unsigned long length)/*{{{*
   error = lodepng_decode32((unsigned char**) out->pixels, &out->width, &out->height, raw_img, length);
   return error;
 }/*}}}*/
+
+int print_image(int fildes, image_t *img)
+{
+  colour_t *ptop, *pbot;
+  swrite(fildes, CLEAR GOTO_HOME);
+
+  for (unsigned int y = 0; y < img->height; y++)
+  {
+    dprintf(fildes, GOTO, y, 0);
+    for (unsigned int x = 0; x < img->width; x++)
+    {
+      ptop = &img->pixels[y*img->width + x];
+      if (y < img->height-1)
+        pbot = &img->pixels[(y+1)*img->width + x];
+      else
+        pbot = NULL;
+
+      dprint_colour(fildes, ptop, x, y, POSITION_FOREGROUND);
+      dprint_colour(fildes, pbot, x, y, POSITION_BACKGROUND);
+    }
+  }
+
+  return 0;
+}
 
