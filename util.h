@@ -5,6 +5,7 @@
 
 typedef enum {
   IMGT_JPEG,
+  IMGT_PNG,
   IMGT_UNKNOWN
 } img_type_t;
 
@@ -20,6 +21,7 @@ typedef struct {
 img_type_t guess_image_type(unsigned char *raw_img, unsigned long length);
 image_t* decode_image(unsigned char *raw_img, unsigned long length, img_type_t image_type);
 image_t* decode_jpeg(unsigned char *raw_img, unsigned long length);
+image_t* decode_png(unsigned char *raw_img, unsigned long length);
 
 int swrite(int fildes, const char* msg);
 
