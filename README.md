@@ -8,7 +8,7 @@ taking up precious space on your precious hard (or solid state) disk drive.
 
 If you've ever encountered that problem, then nc_imag is for you.
 
-Currently we support png images (via pnglode). But will support some more in the
+Currently we support png (via pnglode) and jpeg (via jpeglib) images. But will support some more in the
 future.
 
 
