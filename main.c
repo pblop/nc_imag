@@ -50,14 +50,14 @@ int main(int argc, char* argv[])/*{{{*/
     return 1;
   }
 
+  setup_parent_handler();
+
   // TODO: Check if argv[1] really is a number.
   port = atoi(argv[1]);
   if (argc == 3)
     globals.wait_time = atoi(argv[2]);
 
   printf("Config: port=%d, wait_time=%dms\n", port, globals.wait_time);
-
-  setup_parent_handler();
 
   // Create the socket
   if ((globals.sockfd = socket(AF_INET6, SOCK_STREAM, 0)) == -1)
