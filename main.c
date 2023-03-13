@@ -159,11 +159,18 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
     // While the client is still sending data, we just wait.
     if (prev_size == cur_size || cur_size > INPUT_BUFSIZE)
       break;
+      fprintf(stderr, "[%s:%d] Received %d bytes.\n", client_addr_str, ntohs(client_addr->sin6_port), cur_size - prev_size);
     prev_size = cur_size;
+  }
+  if (cur_size > INPUT_BUFSIZE)
+  {
+    swrite(connfd, "Input too big.\n");
+    close(connfd);
+    return 1;
   }
 
   // Read the image from the socket
-  bytes_read = read(connfd, buf, INPUT_BUFSIZE+1);
+  bytes_read = recv(connfd, buf, cur_size, MSG_WAITALL);
   switch (bytes_read)
   {
     case -1:
@@ -172,10 +179,6 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
       return 1;
     case 0:
       fprintf(stderr, "[%s:%d] Client closed the connection.\n", client_addr_str, ntohs(client_addr->sin6_port));
-      close(connfd);
-      return 1;
-    case INPUT_BUFSIZE+1:
-      swrite(connfd, "Input too big.\n");
       close(connfd);
       return 1;
     default:
