@@ -3,4 +3,6 @@
 
 #include "common.h"
 
+int swrite(int fildes, const char* msg);
+
 #endif

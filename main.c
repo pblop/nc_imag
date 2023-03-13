@@ -5,8 +5,11 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+
+#define INPUT_BUFSIZE 1000*1000
 
 struct {
   int sockfd;
@@ -108,6 +111,8 @@ int main(int argc, char* argv[])/*{{{*/
 // This is the main function for all incomming connections.
 int connection_logic(int connfd)/*{{{*/
 {
+  char buf[INPUT_BUFSIZE+1];
+  int bytes_read;
   globals.connfd = connfd; // Save the connection file descriptor for the signal handler.
   
   // We must ignore sigints because they will be sent to us whenever our parent
@@ -115,13 +120,28 @@ int connection_logic(int connfd)/*{{{*/
   // Our parent process will then SIGUSR1 us.
   setup_child_handler();
 
-  write(connfd, "Hello, world!", 13);
-
-  if (close(connfd) == -1)
+  bytes_read = read(connfd, buf, INPUT_BUFSIZE+1);
+  switch (bytes_read)
   {
-    perror("close connection");
-    return 1;
+    case -1:
+      perror("read");
+      close(connfd);
+      return 1;
+    case 0:
+      swrite(connfd, "Input contains EOF.\n");
+      close(connfd);
+      return 1;
+    case INPUT_BUFSIZE+1:
+      swrite(connfd, "Input too big.\n");
+      close(connfd);
+      return 1;
+    default:
+      break; // If the number of bytes is normal, continue.
   }
+
+  swrite(connfd, "Good job, you sent a decent amount of data!\n");
+
+  close(connfd);
   return 0;
 }/*}}}*/
 
