@@ -26,4 +26,7 @@ int print_image(int fildes, image_t *img);
 
 int swrite(int fildes, const char* msg);
 
+// Time elapsed between t1 (newer) and t2 (older)
+int elapsed_ms(struct timespec *t1, struct timespec *t2);
+
 #endif

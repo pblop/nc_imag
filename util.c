@@ -96,3 +96,8 @@ int print_image(int fildes, image_t *img)/*{{{*/
   return 0;
 }/*}}}*/
 
+int elapsed_ms(struct timespec *t1, struct timespec *t2)/*{{{*/
+{
+  return (t1->tv_sec - t2->tv_sec) * 1000 + (t1->tv_nsec - t2->tv_nsec) / 1000000;  
+}/*}}}*/
+

@@ -13,6 +13,10 @@
 #include <sys/ioctl.h>
 
 #define INPUT_BUFSIZE 1000*1000
+// The time between polls made by the connection logic function to check if
+// the data has changed. If this number is too low, each fork will take
+// a lot of CPU time. The higher it is, the slower the user experience will be.
+#define RECEIVE_POLL_INTERVAL 100
 
 struct {
   int sockfd;
@@ -136,6 +140,7 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
 
   unsigned char buf[INPUT_BUFSIZE+1];
   int bytes_read, err, prev_size = 0, cur_size = 0;
+  struct timespec last_received_time, cur_time;
   img_type_t img_type;
   image_t img;
 
@@ -151,17 +156,34 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
   if(!inet_ntop(AF_INET6, &client_addr->sin6_addr, client_addr_str, sizeof(client_addr_str)))
     strcpy(client_addr_str, "unknown");
 
+  dprintf(connfd, "Hello, %s, I will receive data until %dms have elapsed since "
+      "I've received anything.\n Receiving data...\n", 
+      client_addr_str, globals.wait_time);
+  clock_gettime(CLOCK_MONOTONIC, &last_received_time);
   for (EVER)
   {
-    msleep(globals.wait_time);
+    msleep(RECEIVE_POLL_INTERVAL);
     ioctl(connfd, FIONREAD, &cur_size);
+    clock_gettime(CLOCK_MONOTONIC, &cur_time);
 
     // While the client is still sending data, we just wait.
-    if (prev_size == cur_size || cur_size > INPUT_BUFSIZE)
+    // Whenever globals.wait_time ms have elapsed since any data has changed,
+    // we break
+    if ((prev_size == cur_size && elapsed_ms(&cur_time, &last_received_time) > globals.wait_time) 
+        || cur_size > INPUT_BUFSIZE)
       break;
-      fprintf(stderr, "[%s:%d] Received %d bytes.\n", client_addr_str, ntohs(client_addr->sin6_port), cur_size - prev_size);
+    
+    if (prev_size < cur_size)
+    {
+      fprintf(stderr, "[%s:%d] Received %d new bytes.\n", 
+          client_addr_str, ntohs(client_addr->sin6_port), cur_size - prev_size);
+      dprintf(connfd, "Received %d bytes.\n", cur_size);
+      last_received_time = cur_time;
+    }
+
     prev_size = cur_size;
   }
+
   if (cur_size > INPUT_BUFSIZE)
   {
     swrite(connfd, "Input too big.\n");
