@@ -1,6 +1,7 @@
 #include "common.h"
 #include "termio.h"
 #include "util.h"
+#include <netinet/in.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -24,12 +25,14 @@ void cleanup_exit(int exitn);
 // Children signal handlers
 void setup_child_handler(void);
 void child_sigusr1_handler(int signum);
-int connection_logic(int connfd);
+int connection_logic(int connfd, struct sockaddr_in* client_addr);
 
 int main(int argc, char* argv[])/*{{{*/
 {
   int port, connfd;
   struct sockaddr_in addr;
+  struct sockaddr_in client_addr;
+  socklen_t client_addr_size;
 
   if (argc == 0)
   {
@@ -78,12 +81,14 @@ int main(int argc, char* argv[])/*{{{*/
 
   for (EVER)
   {
-    connfd = accept(globals.sockfd, (struct sockaddr*) NULL, 0);
+    client_addr_size = sizeof(client_addr);
+    connfd = accept(globals.sockfd, (struct sockaddr*) &client_addr, &client_addr_size);
     if (connfd == -1)
     {
       perror("accept");
       cleanup_exit(1);
     }
+    printf("[%s:%d] Connected!\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
     
     // The stuff needed to print the image (prompting the terminal for the
     // current screen size and stuff like that), will probably take some time.
@@ -94,7 +99,7 @@ int main(int argc, char* argv[])/*{{{*/
         perror("fork");
         cleanup_exit(1);
       case 0:
-        exit(connection_logic(connfd));
+        exit(connection_logic(connfd, &client_addr));
       default:
         // We must close the file descriptor in the parent, because the child
         // has now duplicated it. If we don't close it, whenever the child calls
@@ -109,7 +114,7 @@ int main(int argc, char* argv[])/*{{{*/
 }/*}}}*/
 
 // This is the main function for all incomming connections.
-int connection_logic(int connfd)/*{{{*/
+int connection_logic(int connfd, struct sockaddr_in* client_addr)/*{{{*/
 {
   unsigned char buf[INPUT_BUFSIZE+1];
   int bytes_read;
