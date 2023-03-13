@@ -182,7 +182,7 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
     
     
     err = save_file("errors/", buf, bytes_read);
-    if (err == 0)
+    if (err < 0)
       fprintf(stderr, "[%s:%d] error producing file saved as errors/%d.png\n", client_addr_str, ntohs(client_addr->sin6_port), err);
     else
       fprintf(stderr, "[%s:%d] error producing file could not be saved\n", client_addr_str, ntohs(client_addr->sin6_port));
