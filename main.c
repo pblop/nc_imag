@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <dirent.h>
+#include <sys/ioctl.h>
 
 #define INPUT_BUFSIZE 1000*1000
 
@@ -128,9 +129,10 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
   char client_addr_str[INET6_ADDRSTRLEN];
 
   unsigned char buf[INPUT_BUFSIZE+1];
-  int bytes_read, err;
+  int bytes_read, err, prev_size = 0, cur_size = 0;
   img_type_t img_type;
   image_t img;
+
   globals.connfd = connfd; // Save the connection file descriptor for the signal handler.
   
   // We must ignore sigints because they will be sent to us whenever our parent
@@ -142,6 +144,17 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
   getpeername(connfd, (struct sockaddr *)client_addr, client_addr_size);
   if(!inet_ntop(AF_INET6, &client_addr->sin6_addr, client_addr_str, sizeof(client_addr_str)))
     strcpy(client_addr_str, "unknown");
+
+  for (EVER)
+  {
+    msleep(100);
+    ioctl(connfd, FIONREAD, &cur_size);
+
+    // While the client is still sending data, we just wait.
+    if (prev_size == cur_size || cur_size > INPUT_BUFSIZE)
+      break;
+    prev_size = cur_size;
+  }
 
   // Read the image from the socket
   bytes_read = read(connfd, buf, INPUT_BUFSIZE+1);
