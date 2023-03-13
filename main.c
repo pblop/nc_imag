@@ -207,6 +207,8 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
       break; // If the number of bytes is normal, continue.
   }
 
+  dprintf(connfd, "Done.\n");
+
   fprintf(stderr, "[%s:%d] Raw image size: %d.\n", client_addr_str, ntohs(client_addr->sin6_port), bytes_read);
   // Decode the image
   img_type = guess_image_type(buf, bytes_read);
