@@ -130,34 +130,6 @@ void unsetup_screen(void)/*{{{*/
 }
 /*}}}*/
 
-int ensure_screen_size(void)/*{{{*/
-{
-  int width, height, prevwidth, prevheight;
-
-  prevwidth = 0, prevheight = 0;
-  if (get_window_size(&width, &height) != 0)
-    return -1;
-
-  while (width < SCREEN_WIDTH || height < SCREEN_HEIGHT)
-  {
-    if (prevwidth != width || prevheight != height)
-    {
-      printf(CLEAR GOTO
-          "Screen size is too small.\n"
-          "Please resize your terminal to at least %dx%d.\n"
-          "The current size is %dx%d.\n",
-          1, 1,
-          SCREEN_WIDTH, SCREEN_HEIGHT, width, height);
-      fflush(stdout);
-    }
-
-    prevwidth = width, prevheight = height;
-    if (get_window_size(&width, &height) != 0)
-      return -1;
-  }
-
-  return 0;
-}/*}}}*/
 int get_window_size(int *width, int *height)/*{{{*/
 {
   struct winsize ws;
@@ -188,15 +160,5 @@ int msleep(long msec)/*{{{*/
   } while (res);
 
   return res;
-}/*}}}*/
-void start_frame(void)/*{{{*/
-{
-  frame_start = clock();
-}/*}}}*/
-void ensure_frame_time(int ms)/*{{{*/
-{
-  double elapsed = (double)(clock() - frame_start) / (CLOCKS_PER_SEC * 1000);
-  if (elapsed < ms)
-    msleep(ms - elapsed);
 }/*}}}*/
 
