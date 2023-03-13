@@ -93,6 +93,11 @@ int main(int argc, char* argv[])/*{{{*/
       case 0:
         exit(connection_logic(connfd));
       default:
+        // We must close the file descriptor in the parent, because the child
+        // has now duplicated it. If we don't close it, whenever the child calls
+        // close on it, the connection will remain open, because there's still
+        // a process (this parent process) with the file descriptor still open.
+        close(connfd);
         break;
     }
   }
@@ -110,9 +115,13 @@ int connection_logic(int connfd)/*{{{*/
   // Our parent process will then SIGUSR1 us.
   setup_child_handler();
 
-  write(connfd, "Hello, world!", 14);
+  write(connfd, "Hello, world!", 13);
 
-  close(connfd);
+  if (close(connfd) == -1)
+  {
+    perror("close connection");
+    return 1;
+  }
   return 0;
 }/*}}}*/
 
