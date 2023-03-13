@@ -5,11 +5,11 @@
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <sys/_types/_socklen_t.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <dirent.h>
 
 #define INPUT_BUFSIZE 1000*1000
 
@@ -27,6 +27,8 @@ void cleanup_exit(int exitn);
 void setup_child_handler(void);
 void child_sigusr1_handler(int signum);
 int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* client_addr_size);
+
+int save_file(char* foldername, unsigned char* data, int size);
 
 int main(int argc, char* argv[])/*{{{*/
 {
@@ -126,7 +128,7 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
   char client_addr_str[INET6_ADDRSTRLEN];
 
   unsigned char buf[INPUT_BUFSIZE+1];
-  int bytes_read, decode_err;
+  int bytes_read, err;
   img_type_t img_type;
   image_t img;
   globals.connfd = connfd; // Save the connection file descriptor for the signal handler.
@@ -136,13 +138,12 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
   // Our parent process will then SIGUSR1 us.
   setup_child_handler();
 
+  // Get ip address of client
   getpeername(connfd, (struct sockaddr *)client_addr, client_addr_size);
   if(!inet_ntop(AF_INET6, &client_addr->sin6_addr, client_addr_str, sizeof(client_addr_str)))
     strcpy(client_addr_str, "unknown");
 
-
-
-
+  // Read the image from the socket
   bytes_read = read(connfd, buf, INPUT_BUFSIZE+1);
   switch (bytes_read)
   {
@@ -162,6 +163,8 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
       break; // If the number of bytes is normal, continue.
   }
 
+  fprintf(stderr, "[%s:%d] Size: %d.\n", client_addr_str, ntohs(client_addr->sin6_port), bytes_read);
+  // Decode the image
   img_type = guess_image_type(buf, bytes_read);
   if (img_type == IMGT_UNKNOWN)
   {
@@ -171,11 +174,18 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
     return 0;
   }
 
-  if ((decode_err = decode_image(&img, buf, bytes_read, img_type)) != 0)
+  if ((err = decode_image(&img, buf, bytes_read, img_type)) != 0)
   {
-    fprintf(stderr, "[%s:%d] decode_image(&img, buf, bytes_read=%d, img_type=%d)=%d\n", client_addr_str, ntohs(client_addr->sin6_port), bytes_read, img_type, decode_err);
+    fprintf(stderr, "[%s:%d] decode_image(&img, buf, bytes_read=%d, img_type=%d)=%d\n", client_addr_str, ntohs(client_addr->sin6_port), bytes_read, img_type, err);
     swrite(connfd, "Sorry, we had an error while decoding that image\n");
     close(connfd);
+    
+    
+    err = save_file("errors/", buf, bytes_read);
+    if (err == 0)
+      fprintf(stderr, "[%s:%d] error producing file saved as errors/%d.png\n", client_addr_str, ntohs(client_addr->sin6_port), err);
+    else
+      fprintf(stderr, "[%s:%d] error producing file could not be saved\n", client_addr_str, ntohs(client_addr->sin6_port));
     return 1;
   }
 
@@ -246,5 +256,40 @@ void child_sigusr1_handler(int signum)/*{{{*/
     close(globals.connfd);
 
   exit(0);
+}/*}}}*/
+
+int save_file(char* foldername, unsigned char* data, int size)/*{{{*/
+{
+  DIR *d;
+  FILE *f;
+  char filename[1024]; // 1024 is the max length of a filename on macos.
+                       // (or at least it's the max size a dir->d_name can be.)
+  char *filepath;
+  int max_used_number = 0;
+
+  struct dirent *dir;
+  d = opendir(foldername);
+  if (d == NULL)
+    return -1;
+
+  while ((dir = readdir(d)) != NULL) {
+    sscanf(dir->d_name, "%s.%*s", filename);
+
+    // TODO: Check if filename is a number.
+    if (atoi(filename) > max_used_number)
+      max_used_number = atoi(filename);
+  }
+  closedir(d);
+
+  filepath = malloc(strlen(foldername) + strlen(filename) + 1);
+  sprintf(filepath, "%s%d.png", foldername, max_used_number+1);
+  
+  f = fopen(filepath, "wb");
+  if (f == NULL)
+    return -2;
+
+  fwrite(data, size, 1, f);
+  free(filepath);
+  return max_used_number+1;
 }/*}}}*/
 
