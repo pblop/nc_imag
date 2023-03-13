@@ -116,10 +116,12 @@ int main(int argc, char* argv[])/*{{{*/
 // This is the main function for all incomming connections.
 int connection_logic(int connfd, struct sockaddr_in* client_addr)/*{{{*/
 {
+  UNUSED(client_addr);
+
   unsigned char buf[INPUT_BUFSIZE+1];
   int bytes_read;
   img_type_t img_type;
-  image_t image;
+  image_t img;
   globals.connfd = connfd; // Save the connection file descriptor for the signal handler.
   
   // We must ignore sigints because they will be sent to us whenever our parent
@@ -154,14 +156,14 @@ int connection_logic(int connfd, struct sockaddr_in* client_addr)/*{{{*/
     return 0;
   }
 
-  if (decode_image(&image, buf, bytes_read, img_type) != 0)
+  if (decode_image(&img, buf, bytes_read, img_type) != 0)
   {
     swrite(connfd, "Sorry, we had an error while decoding that image\n");
     close(connfd);
     return 1;
   }
 
-  swrite(connfd, "You should see an image here!!\n");
+  print_image(connfd, &img);
 
   close(connfd);
   return 0;
