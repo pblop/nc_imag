@@ -17,7 +17,8 @@
 struct {
   int sockfd;
   int connfd;
-} globals = {-1, -1};
+  int wait_time;
+} globals = {-1, -1, 0};
 
 // Parent signal handlers
 void parent_sigint_handler(int signum);
@@ -39,18 +40,22 @@ int main(int argc, char* argv[])/*{{{*/
   socklen_t client_addr_size;
   char client_addr_str[INET6_ADDRSTRLEN];
 
-  if (argc == 0)
+  if (argc == 0 || argc > 3)
   {
-    fprintf(stderr, "Usage: ncimag <port>\n");
+    fprintf(stderr, "Usage: ncimag <port> [wait time (default 0) ms]\n");
     return 1;
   }
   if (argc < 2){
-    fprintf(stderr, "Usage: %s <port>\n", argv[0]);
+    fprintf(stderr, "Usage: %s <port> [wait time (default 0) ms]\n", argv[0]);
     return 1;
   }
 
   // TODO: Check if argv[1] really is a number.
   port = atoi(argv[1]);
+  if (argc == 3)
+    globals.wait_time = atoi(argv[2]);
+
+  printf("Config: port=%d, wait_time=%dms\n", port, globals.wait_time);
 
   setup_parent_handler();
 
@@ -83,6 +88,7 @@ int main(int argc, char* argv[])/*{{{*/
     perror("listen");
     cleanup_exit(1);
   }
+
   printf("Listening on port %d\n", port);
 
   for (EVER)
@@ -147,7 +153,7 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
 
   for (EVER)
   {
-    msleep(100);
+    msleep(globals.wait_time);
     ioctl(connfd, FIONREAD, &cur_size);
 
     // While the client is still sending data, we just wait.
@@ -176,7 +182,7 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
       break; // If the number of bytes is normal, continue.
   }
 
-  fprintf(stderr, "[%s:%d] Size: %d.\n", client_addr_str, ntohs(client_addr->sin6_port), bytes_read);
+  fprintf(stderr, "[%s:%d] Raw image size: %d.\n", client_addr_str, ntohs(client_addr->sin6_port), bytes_read);
   // Decode the image
   img_type = guess_image_type(buf, bytes_read);
   if (img_type == IMGT_UNKNOWN)
