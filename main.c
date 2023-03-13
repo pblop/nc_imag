@@ -25,14 +25,15 @@ void cleanup_exit(int exitn);
 // Children signal handlers
 void setup_child_handler(void);
 void child_sigusr1_handler(int signum);
-int connection_logic(int connfd, struct sockaddr_in* client_addr);
+int connection_logic(int connfd, struct sockaddr_in6* client_addr);
 
 int main(int argc, char* argv[])/*{{{*/
 {
   int port, connfd;
-  struct sockaddr_in addr;
-  struct sockaddr_in client_addr;
+  struct sockaddr_in6 addr;
+  struct sockaddr_in6 client_addr;
   socklen_t client_addr_size;
+  char client_addr_str[INET6_ADDRSTRLEN];
 
   if (argc == 0)
   {
@@ -50,7 +51,7 @@ int main(int argc, char* argv[])/*{{{*/
   setup_parent_handler();
 
   // Create the socket
-  if ((globals.sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+  if ((globals.sockfd = socket(AF_INET6, SOCK_STREAM, 0)) == -1)
   {
     perror("create socket");
     cleanup_exit(1);
@@ -62,9 +63,10 @@ int main(int argc, char* argv[])/*{{{*/
     cleanup_exit(1);
   }
 
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  addr.sin_port = htons(port);
+  memset(&addr, 0, sizeof(addr));
+  addr.sin6_family = AF_INET6;
+  addr.sin6_addr = in6addr_any;
+  addr.sin6_port = htons(port);
 
   if (bind(globals.sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1)
   {
@@ -88,7 +90,11 @@ int main(int argc, char* argv[])/*{{{*/
       perror("accept");
       cleanup_exit(1);
     }
-    printf("[%s:%d] Connected!\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    getpeername(connfd, (struct sockaddr *)&client_addr, &client_addr_size);
+    if(inet_ntop(AF_INET6, &client_addr.sin6_addr, client_addr_str, sizeof(client_addr_str)))
+      printf("[%s:%d] Connected!\n", client_addr_str, ntohs(client_addr.sin6_port));
+    else
+      printf("[unknown] Connected!\n");
     
     // The stuff needed to print the image (prompting the terminal for the
     // current screen size and stuff like that), will probably take some time.
@@ -114,7 +120,7 @@ int main(int argc, char* argv[])/*{{{*/
 }/*}}}*/
 
 // This is the main function for all incomming connections.
-int connection_logic(int connfd, struct sockaddr_in* client_addr)/*{{{*/
+int connection_logic(int connfd, struct sockaddr_in6* client_addr)/*{{{*/
 {
   UNUSED(client_addr);
 
