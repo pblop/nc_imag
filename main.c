@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
@@ -17,7 +18,7 @@ void setup_sigint_handler(void);
 
 int main(int argc, char* argv[])
 {
-  int port;
+  int port, connfd;
   struct sockaddr_in addr;
 
   if (argc == 0)
@@ -58,11 +59,25 @@ int main(int argc, char* argv[])
     cleanup_exit(1);
   }
 
-  printf("Listening on port %d", port);
   if (listen(globals.sockfd, 100) == -1)
   {
     perror("listen");
     cleanup_exit(1);
+  }
+  printf("Listening on port %d\n", port);
+
+  for (EVER)
+  {
+    connfd = accept(globals.sockfd, (struct sockaddr*) NULL, 0);
+    if (connfd == -1)
+    {
+      perror("accept");
+      cleanup_exit(1);
+    }
+
+    write(connfd, "Hello, world!", 14);
+
+    close(connfd);
   }
 
   return 0;
