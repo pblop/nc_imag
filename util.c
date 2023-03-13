@@ -78,9 +78,9 @@ int print_image(int fildes, image_t *img)/*{{{*/
 
       // If the previous pixel was the same colour, don't print that
       // extra colour code.
-      if (colour_eq_na(pptop, ptop))
+      if (!colour_eq_na(pptop, ptop))
         dprint_colour(fildes, ptop, POSITION_FOREGROUND);
-      if (colour_eq_na(ppbot, pbot))
+      if (!colour_eq_na(ppbot, pbot))
         dprint_colour(fildes, pbot, POSITION_BACKGROUND);
 
       swrite(fildes, "▀");
