@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <sys/_types/_socklen_t.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -25,7 +26,7 @@ void cleanup_exit(int exitn);
 // Children signal handlers
 void setup_child_handler(void);
 void child_sigusr1_handler(int signum);
-int connection_logic(int connfd, struct sockaddr_in6* client_addr);
+int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* client_addr_size);
 
 int main(int argc, char* argv[])/*{{{*/
 {
@@ -105,7 +106,7 @@ int main(int argc, char* argv[])/*{{{*/
         perror("fork");
         cleanup_exit(1);
       case 0:
-        exit(connection_logic(connfd, &client_addr));
+        exit(connection_logic(connfd, &client_addr, &client_addr_size));
       default:
         // We must close the file descriptor in the parent, because the child
         // has now duplicated it. If we don't close it, whenever the child calls
@@ -120,12 +121,12 @@ int main(int argc, char* argv[])/*{{{*/
 }/*}}}*/
 
 // This is the main function for all incomming connections.
-int connection_logic(int connfd, struct sockaddr_in6* client_addr)/*{{{*/
+int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* client_addr_size)/*{{{*/
 {
-  UNUSED(client_addr);
+  char client_addr_str[INET6_ADDRSTRLEN];
 
   unsigned char buf[INPUT_BUFSIZE+1];
-  int bytes_read;
+  int bytes_read, decode_err;
   img_type_t img_type;
   image_t img;
   globals.connfd = connfd; // Save the connection file descriptor for the signal handler.
@@ -134,6 +135,13 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr)/*{{{*/
   // process is being killed via ^C.
   // Our parent process will then SIGUSR1 us.
   setup_child_handler();
+
+  getpeername(connfd, (struct sockaddr *)client_addr, client_addr_size);
+  if(!inet_ntop(AF_INET6, &client_addr->sin6_addr, client_addr_str, sizeof(client_addr_str)))
+    strcpy(client_addr_str, "unknown");
+
+
+
 
   bytes_read = read(connfd, buf, INPUT_BUFSIZE+1);
   switch (bytes_read)
@@ -157,13 +165,15 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr)/*{{{*/
   img_type = guess_image_type(buf, bytes_read);
   if (img_type == IMGT_UNKNOWN)
   {
+    fprintf(stderr, "[%s:%d] Uploaded an unknown image.\n", client_addr_str, ntohs(client_addr->sin6_port));
     swrite(connfd, "Sorry, we don't support that image type at the moment\n");
     close(connfd);
     return 0;
   }
 
-  if (decode_image(&img, buf, bytes_read, img_type) != 0)
+  if ((decode_err = decode_image(&img, buf, bytes_read, img_type)) != 0)
   {
+    fprintf(stderr, "[%s:%d] decode_image(&img, buf, bytes_read=%d, img_type=%d)=%d\n", client_addr_str, ntohs(client_addr->sin6_port), bytes_read, img_type, decode_err);
     swrite(connfd, "Sorry, we had an error while decoding that image\n");
     close(connfd);
     return 1;
