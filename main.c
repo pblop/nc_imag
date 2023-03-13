@@ -111,8 +111,9 @@ int main(int argc, char* argv[])/*{{{*/
 // This is the main function for all incomming connections.
 int connection_logic(int connfd)/*{{{*/
 {
-  char buf[INPUT_BUFSIZE+1];
+  unsigned char buf[INPUT_BUFSIZE+1];
   int bytes_read;
+  img_type_t img_type;
   globals.connfd = connfd; // Save the connection file descriptor for the signal handler.
   
   // We must ignore sigints because they will be sent to us whenever our parent
@@ -137,6 +138,14 @@ int connection_logic(int connfd)/*{{{*/
       return 1;
     default:
       break; // If the number of bytes is normal, continue.
+  }
+
+  img_type = guess_image_type(buf, bytes_read);
+  if (img_type == IMGT_UNKNOWN)
+  {
+    swrite(connfd, "Sorry, we don't support that image type at the moment\n");
+    close(connfd);
+    return 0;
   }
 
   swrite(connfd, "Good job, you sent a decent amount of data!\n");
