@@ -24,7 +24,7 @@ extern struct termios orig_screen_attrs;
 extern clock_t frame_start;
 
 typedef struct {
-  unsigned char r, g, b;
+  unsigned char r, g, b, a;
 } colour_t;
 
 typedef enum {
@@ -80,6 +80,6 @@ void unsetup_screen(void);
 int get_window_size(int *width, int *height);
 
 int msleep(long msec);
-void dprint_colour(int fildes, colour_t *colour, int x, int y, colour_position_t position);
+void dprint_colour(int fildes, colour_t *colour, colour_position_t position);
 
 #endif

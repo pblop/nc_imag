@@ -4,6 +4,7 @@
 #include "lodepng/lodepng.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -49,32 +50,37 @@ int decode_jpeg(image_t* out, unsigned char *raw_img, unsigned long length)/*{{{
 int decode_png(image_t* out, unsigned char *raw_img, unsigned long length)/*{{{*/
 {
   unsigned int error;
+  unsigned char *lodeimg = 0;
 
-  error = lodepng_decode32((unsigned char**) out->pixels, &out->width, &out->height, raw_img, length);
+  error = lodepng_decode32(&lodeimg, &out->width, &out->height, raw_img, length);
+  if (!error)
+    out->pixels = (colour_t*) lodeimg;
+
   return error;
 }/*}}}*/
 
-int print_image(int fildes, image_t *img)
+int print_image(int fildes, image_t *img)/*{{{*/
 {
   colour_t *ptop, *pbot;
   swrite(fildes, CLEAR GOTO_HOME);
-
-  for (unsigned int y = 0; y < img->height; y++)
+  for (unsigned int y = 0; y < img->height; y+=1)
   {
-    dprintf(fildes, GOTO, y, 0);
+    dprintf(fildes, GOTO, y+1, 0);
     for (unsigned int x = 0; x < img->width; x++)
     {
-      ptop = &img->pixels[y*img->width + x];
-      if (y < img->height-1)
-        pbot = &img->pixels[(y+1)*img->width + x];
-      else
-        pbot = NULL;
+      ptop = &pix_at(img, x, y);
+      //if ((y+1) >= img->height)
+      //  pbot = NULL; // If we're on the last row, just print the top pixel.
+      //else
+      //  pbot = &pix_at(img, x, y+1);
 
-      dprint_colour(fildes, ptop, x, y, POSITION_FOREGROUND);
-      dprint_colour(fildes, pbot, x, y, POSITION_BACKGROUND);
+      //dprint_colour(fildes, ptop, POSITION_FOREGROUND);
+      dprint_colour(fildes, ptop, POSITION_BACKGROUND);
+      //swrite(fildes, "▀");
+      swrite(fildes, " ");
     }
   }
 
   return 0;
-}
+}/*}}}*/
 

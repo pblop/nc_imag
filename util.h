@@ -4,7 +4,7 @@
 #include "common.h"
 #include "termio.h"
 
-#define pix(img, x, y) img->pixels[(y) * img->width + (x)]
+#define pix_at(img, x, y) (img->pixels[(y) * img->width + (x)])
 
 typedef enum {
   IMGT_JPEG,
