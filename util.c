@@ -75,7 +75,7 @@ int print_image(int fildes, image_t *img)/*{{{*/
         pbot = &pix_at(img, x, y+1);
 
       dprint_colour(fildes, ptop, POSITION_FOREGROUND);
-      dprint_colour(fildes, ptop, POSITION_BACKGROUND);
+      dprint_colour(fildes, pbot, POSITION_BACKGROUND);
       swrite(fildes, "▀");
     }
   }
