@@ -152,7 +152,7 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
       close(connfd);
       return 1;
     case 0:
-      swrite(connfd, "Input contains EOF.\n");
+      fprintf(stderr, "[%s:%d] Client closed the connection.\n", client_addr_str, ntohs(client_addr->sin6_port));
       close(connfd);
       return 1;
     case INPUT_BUFSIZE+1:
@@ -179,7 +179,6 @@ int connection_logic(int connfd, struct sockaddr_in6* client_addr, socklen_t* cl
     fprintf(stderr, "[%s:%d] decode_image(&img, buf, bytes_read=%d, img_type=%d)=%d\n", client_addr_str, ntohs(client_addr->sin6_port), bytes_read, img_type, err);
     swrite(connfd, "Sorry, we had an error while decoding that image\n");
     close(connfd);
-    
     
     err = save_file("errors/", buf, bytes_read);
     if (err >= 0)
