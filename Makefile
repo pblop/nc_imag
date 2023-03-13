@@ -1,5 +1,5 @@
 CC:=cc
-CFLAGS:=-Wall -Wextra -pedantic -std=c17 -g
+CFLAGS:=-Wall -Wextra -pedantic -std=c17 -g -ljpeg
 
 OBJECTS:=termio.o util.o lodepng/lodepng.o
 HEADERS:=termio.h util.h common.h lodepng/lodepng.h

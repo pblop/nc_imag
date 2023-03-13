@@ -4,6 +4,7 @@
 #include "lodepng/lodepng.h"
 
 #include <stdio.h>
+#include <jpeglib.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -39,12 +40,70 @@ int decode_image(image_t* out, unsigned char *raw_img, unsigned long length, img
   }
 }/*}}}*/
 
-int decode_jpeg(image_t* out, unsigned char *raw_img, unsigned long length)/*{{{*/
+int decode_jpeg(image_t* out, unsigned char *jpg_buffer, unsigned long jpg_size)/*{{{*/
 {
-  UNUSED(out);
-  UNUSED(raw_img);
-  UNUSED(length);
-  return -1;
+  // Basically a copy of this https://gist.github.com/PhirePhly/3080633
+  int rc;
+
+	// Variables for the decompressor itself
+	struct jpeg_decompress_struct cinfo;
+	struct jpeg_error_mgr jerr;
+
+	// Variables for the output buffer, and how long each row is
+	unsigned long bmp_size;
+	unsigned char *bmp_buffer;
+	int row_stride, pixel_size;
+
+  cinfo.err = jpeg_std_error(&jerr);	
+	jpeg_create_decompress(&cinfo);
+
+	jpeg_mem_src(&cinfo, jpg_buffer, jpg_size);
+  rc = jpeg_read_header(&cinfo, TRUE);
+
+	if (rc != 1)
+    return -1;
+
+  jpeg_start_decompress(&cinfo);
+
+	out->width = cinfo.output_width;
+	out->height = cinfo.output_height;
+	pixel_size = cinfo.output_components;
+
+	bmp_size = out->width * out->height * pixel_size;
+	bmp_buffer = (unsigned char*) malloc(bmp_size);
+
+  row_stride = out->width * pixel_size;
+
+	while (cinfo.output_scanline < cinfo.output_height) {
+		unsigned char *buffer_array[1];
+		buffer_array[0] = bmp_buffer + \
+						   (cinfo.output_scanline) * row_stride;
+
+		jpeg_read_scanlines(&cinfo, buffer_array, 1);
+	}
+
+  jpeg_finish_decompress(&cinfo);
+  jpeg_destroy_decompress(&cinfo);
+
+  // NOTE: We don't free the input buffer because that's main.c territory.
+  // We don't care whether it was dinamically or statically allocated.
+
+  // TODO: Do this in a more elegant way, maybe inside the while loop.
+  // Allocate memory for our actual image.
+  out->pixels = malloc(out->width * out->height * sizeof(colour_t));
+  for (unsigned int i = 0; i*pixel_size < bmp_size; i++)
+  {
+    out->pixels[i] = (colour_t) {
+      .r = bmp_buffer[i*pixel_size],
+      .g = bmp_buffer[i*pixel_size+1],
+      .b = bmp_buffer[i*pixel_size+2],
+      .a = 0
+    };
+  }
+
+  free(bmp_buffer);
+
+  return 0;
 }/*}}}*/
 
 int decode_png(image_t* out, unsigned char *raw_img, unsigned long length)/*{{{*/
