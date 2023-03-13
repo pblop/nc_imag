@@ -63,21 +63,20 @@ int print_image(int fildes, image_t *img)/*{{{*/
 {
   colour_t *ptop, *pbot;
   swrite(fildes, CLEAR GOTO_HOME);
-  for (unsigned int y = 0; y < img->height; y+=1)
+  for (unsigned int y = 0; y < img->height; y+=2)
   {
-    dprintf(fildes, GOTO, y+1, 0);
+    dprintf(fildes, GOTO, y/2+1, 0);
     for (unsigned int x = 0; x < img->width; x++)
     {
       ptop = &pix_at(img, x, y);
-      //if ((y+1) >= img->height)
-      //  pbot = NULL; // If we're on the last row, just print the top pixel.
-      //else
-      //  pbot = &pix_at(img, x, y+1);
+      if ((y+1) >= img->height)
+        pbot = NULL; // If we're on the last row, just print the top pixel.
+      else
+        pbot = &pix_at(img, x, y+1);
 
-      //dprint_colour(fildes, ptop, POSITION_FOREGROUND);
+      dprint_colour(fildes, ptop, POSITION_FOREGROUND);
       dprint_colour(fildes, ptop, POSITION_BACKGROUND);
-      //swrite(fildes, "▀");
-      swrite(fildes, " ");
+      swrite(fildes, "▀");
     }
   }
 
