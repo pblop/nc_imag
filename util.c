@@ -65,7 +65,7 @@ int print_image(int fildes, image_t *img)/*{{{*/
   swrite(fildes, CLEAR GOTO_HOME);
   for (unsigned int y = 0; y < img->height; y+=2)
   {
-    dprintf(fildes, GOTO, y/2+1, 0);
+    dprintf(fildes, GOTO, y/2+1, 1);
     for (unsigned int x = 0; x < img->width; x++)
     {
       ptop = &pix_at(img, x, y);
@@ -79,6 +79,8 @@ int print_image(int fildes, image_t *img)/*{{{*/
       swrite(fildes, "▀");
     }
   }
+  dprint_colour(fildes, NULL, POSITION_FOREGROUND);
+  dprint_colour(fildes, NULL, POSITION_BACKGROUND);
 
   return 0;
 }/*}}}*/
