@@ -61,7 +61,9 @@ int decode_png(image_t* out, unsigned char *raw_img, unsigned long length)/*{{{*
 
 int print_image(int fildes, image_t *img)/*{{{*/
 {
-  colour_t *ptop, *pbot;
+  colour_t *ptop, *pbot, *pptop, *ppbot;
+  ptop = pbot = pptop = ppbot = NULL;
+
   swrite(fildes, CLEAR GOTO_HOME);
   for (unsigned int y = 0; y < img->height; y+=2)
   {
@@ -74,9 +76,18 @@ int print_image(int fildes, image_t *img)/*{{{*/
       else
         pbot = &pix_at(img, x, y+1);
 
-      dprint_colour(fildes, ptop, POSITION_FOREGROUND);
-      dprint_colour(fildes, pbot, POSITION_BACKGROUND);
+      // If the previous pixel was the same colour, don't print that
+      // extra colour code.
+      if (colour_eq_na(pptop, ptop))
+        dprint_colour(fildes, ptop, POSITION_FOREGROUND);
+      if (colour_eq_na(ppbot, pbot))
+        dprint_colour(fildes, pbot, POSITION_BACKGROUND);
+
       swrite(fildes, "▀");
+
+      // Save previous (current) pixel for next iteration
+      pptop = ptop;
+      ppbot = pbot;
     }
   }
   dprint_colour(fildes, NULL, POSITION_FOREGROUND);

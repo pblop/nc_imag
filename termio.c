@@ -180,3 +180,21 @@ void dprint_colour(int fildes, colour_t *colour, colour_position_t pos)/*{{{*/
   }
 }/*}}}*/
 
+bool colour_eq(colour_t *a, colour_t *b)/*{{{*/
+{
+  if (a == NULL && b == NULL)
+    return true;
+  if (a == NULL || b == NULL)
+    return false;
+
+  return a->r == b->r && a->g == b->g && a->b == b->b && a->a == b->a;
+}/*}}}*/
+bool colour_eq_na(colour_t *a, colour_t *b)/*{{{*/
+{
+  if (a == NULL && b == NULL)
+    return true;
+  if (a == NULL || b == NULL)
+    return false;
+
+  return a->r == b->r && a->g == b->g && a->b == b->b;
+}/*}}}*/

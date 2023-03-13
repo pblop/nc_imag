@@ -82,4 +82,9 @@ int get_window_size(int *width, int *height);
 int msleep(long msec);
 void dprint_colour(int fildes, colour_t *colour, colour_position_t position);
 
+/* check if colours a and b are the same */
+bool colour_eq(colour_t *a, colour_t *b);
+/* check if colours a and b are the same, ignoring alpha */
+bool colour_eq_na(colour_t *a, colour_t *b);
+
 #endif
