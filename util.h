@@ -22,6 +22,7 @@ img_type_t guess_image_type(unsigned char *raw_img, unsigned long length);
 int decode_image(image_t* out, unsigned char *raw_img, unsigned long length, img_type_t image_type);
 int decode_jpeg(image_t* out, unsigned char *raw_img, unsigned long length);
 int decode_png(image_t* out, unsigned char *raw_img, unsigned long length);
+int decode_webp(image_t* out, unsigned char *raw_img, unsigned long length);
 
 int print_image(int fildes, image_t *img);
 

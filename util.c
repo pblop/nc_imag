@@ -1,13 +1,15 @@
 #include "util.h"
 
 #include "termio.h"
-#include "lodepng/lodepng.h"
 
 #include <stdio.h>
-#include <jpeglib.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <webp/decode.h>
+
+#include "lodepng/lodepng.h"
+#include <jpeglib.h>
 
 int swrite(int fildes, const char* msg)
 {
@@ -39,6 +41,8 @@ int decode_image(image_t* out, unsigned char *raw_img, unsigned long length, img
       return decode_jpeg(out, raw_img, length);
     case IMGT_PNG:
       return decode_png(out, raw_img, length);
+    case IMGT_WEBP:
+      return decode_webp(out, raw_img, length);
 
     default:
       return -1;
@@ -121,6 +125,35 @@ int decode_png(image_t* out, unsigned char *raw_img, unsigned long length)/*{{{*
     out->pixels = (colour_t*) lodeimg;
 
   return error;
+}/*}}}*/
+
+int decode_webp(image_t* out, unsigned char *raw_img, unsigned long length)/*{{{*/
+{
+  uint8_t *data;
+  int width, height;
+
+  data = WebPDecodeRGBA(raw_img, length, &width, &height);
+
+  if (data == NULL)
+    return -1;
+  if (width < 0 || height < 0)
+  {
+    WebPFree(data);
+    return -2;
+  }
+
+  out->width = width;
+  out->height = height;
+  // 4 because RGBA
+  out->pixels = malloc(width*height*sizeof(colour_t));
+  if (out->pixels == NULL)
+  {
+    WebPFree(data);
+    return -3;
+  }
+  memcpy(out->pixels, data, width*height*4);
+
+  return 0;
 }/*}}}*/
 
 int print_image(int fildes, image_t *img)/*{{{*/
