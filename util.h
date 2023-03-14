@@ -9,6 +9,7 @@
 typedef enum {
   IMGT_JPEG,
   IMGT_PNG,
+  IMGT_WEBP,
   IMGT_UNKNOWN
 } img_type_t;
 

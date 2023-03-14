@@ -19,9 +19,14 @@ img_type_t guess_image_type(unsigned char *raw_img, unsigned long length)/*{{{*/
   if (length >= 4 && raw_img[0] == 0xff && raw_img[1] == 0xd8 &&
                      raw_img[2] == 0xff && raw_img[3] == 0xe0)
     return IMGT_JPEG;
-  if (length >= 4 && raw_img[0] == 0x89 && raw_img[1] == 0x50 &&
-                     raw_img[2] == 0x4e && raw_img[3] == 0x47)
+  if (length >= 4 && raw_img[0] == 0x89 && raw_img[1] == 'P' &&
+                     raw_img[2] == 'N' && raw_img[3] == 'G')
     return IMGT_PNG;
+  if (length >= 12 && raw_img[0] == 'R'  && raw_img[1] == 'I' &&
+                      raw_img[2] == 'F'  && raw_img[3] == 'F' &&
+                      raw_img[8] == 'W'  && raw_img[9] == 'E' &&
+                      raw_img[10] == 'B' && raw_img[11] == 'P')
+    return IMGT_WEBP;
 
   return IMGT_UNKNOWN;
 }/*}}}*/
