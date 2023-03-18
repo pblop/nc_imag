@@ -11,4 +11,5 @@ If you've ever encountered that problem, then nc_imag is for you.
 Currently we support png (via pnglode), jpeg (via jpeglib), 
 and webp (via libwebp) images. But will support some more in the future.
 
-
+NOTE: It kind of struggles with slow connections over the internet, works the
+best in a LAN.
